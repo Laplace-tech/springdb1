@@ -135,8 +135,8 @@ public class MemberRepositoryV0 {
 		try (Connection con = DBConnectionUtil.getConnection(); 
 			 PreparedStatement pstmt = con.prepareStatement(sql)
 		) {
-			int ResultSize = pstmt.executeUpdate();
-			log.info("deleteAll resultSize={}", ResultSize);
+			int resultSize = pstmt.executeUpdate();
+			log.info("deleteAll resultSize={}", resultSize);
 		} catch (SQLException e) {
 			log.error("DB Error", e);
 			throw new RuntimeException(e);
