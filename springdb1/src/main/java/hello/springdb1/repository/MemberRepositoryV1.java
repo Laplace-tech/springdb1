@@ -29,8 +29,8 @@ import lombok.extern.slf4j.Slf4j;
  * 2) DataSource vs DriverManager 
  * - DriverManager.getConnection(...)은 호출할 때마다 "새 커넥션"을 만듦. 
  * - DataSource 는 커넥션을 "공급"하는 표준 인터페이스(팩토리) 
- *   * 일반 구현: 매번 새 커넥션 생성(테스트/간단 용도) 
- *   * 풀링 구현: 커넥션 풀에서 가져와 반환(실무 표준) 
+ *   * 일반 구현: 매번 새 커넥션 생성(테스트/간단 용도) : DriverManagerDataSource
+ *   * 풀링 구현: 커넥션 풀에서 가져와 반환(실무 표준) : HikariDataSource 
  * - 장점: 설정 주입/외부화 용이, 테스트 용이, 서버/프레임워크가 리소스를 관리하기 쉬움 
  * - 스프링은 DataSource를 빈으로 주입받아 JDBCTemplate/JPA 등이 재사용.
  * 

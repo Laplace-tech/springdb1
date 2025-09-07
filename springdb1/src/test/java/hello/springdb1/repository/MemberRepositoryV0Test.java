@@ -22,6 +22,7 @@ public class MemberRepositoryV0Test {
 
 	@BeforeAll
 	void initTable() throws SQLException {
+		repository.dropTable();
 		repository.initTable();
 	}
 
