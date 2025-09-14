@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 import javax.sql.DataSource;
@@ -151,111 +152,126 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class MemberRepositoryV2 {
 
-    private final DataSource dataSource;
-
+private final DataSource dataSource;
+	
     // ========== 테이블 관리 ================
-    public void initTable() {
-        String ddl = "create table if not exists member (" +
-                     "member_id varchar(10) primary key, " +
-                     "money integer not null default 0)";
-        log.info("DDL 실행: {}", ddl);
-        executeUpdate(ddl);
-    }
-
-    public void dropTable() {
-        String ddl = "drop table if exists member";
-        log.info("DDL 실행: {}", ddl);
-        executeUpdate(ddl);
-    }
-
+	public void initTable() {
+		String ddl = "create table if not exists member (" 
+					+ "member_id varchar(10) primary key, "
+					+ "money integer not null default 0)";
+		log.info("Table member creating...");
+		execute(ddl);
+	}
+	 
+	public void dropTable() {
+		String ddl = "drop table if exists member";
+		log.info("Table member dropping...");
+		execute(ddl);
+	}
+	
     // =========== CRUD ===========
-    public Member save(Member member) {
-        String sql = "insert into member(member_id, money) values (?, ?)";
-        log.info("저장 실행: memberId={}, money={}", member.getMemberId(), member.getMoney());
-        executeUpdate(sql, member.getMemberId(), member.getMoney());
-        return member;
-    }
+	public Member save(Member member) {
+		String sql = "insert into member(member_id, money) values (?, ?)";
+		log.info("저장 실행: memberId={}, money={}", member.getMemberId(), member.getMoney());
+		execute(sql, member.getMemberId(), member.getMoney());
+		return member;
+	}
 
-    public Member findById(String memberId) {
-        log.info("단건 조회 실행: memberId={}", memberId);
-        try (Connection con = dataSource.getConnection()) {
+	public Member findById(String memberId) {
+		log.info("단건 조회 실행 : memberId={}", memberId);
+		
+		try(Connection con = getConnection(dataSource)) {
+			return findById(con, memberId);
+		} catch (SQLException e) {
+			log.error("DB 오류 - findById(memberId={})", memberId);
+            throw new RuntimeException(e);
+		}
+	}
+
+    // connection 닫지 않음
+	public Member findById(Connection con, String memberId) {
+		String sql = "select * from member where member_id=?";
+		
+		try(PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			
+			try(ResultSet rs = pstmt.executeQuery()) {
+				
+				if(rs.next()) {
+					Member member = new Member(rs.getString("member_id"), rs.getInt("money"));
+					log.info("조회 성공 : {}", member);
+					return member;
+				} else {
+					log.warn("조회 실패 : memberId={} 존재하지 않음", memberId);
+					return null;
+				}
+			}
+		} catch (SQLException e) {
+			log.error("DB 오류 - findById(memberId={})", memberId);
+            throw new RuntimeException(e);
+		}
+	}
+	
+	public Member update(String memberId, int money) {
+		try (Connection con = getConnection(dataSource)) {
+			return update(con, memberId, money);
+		} catch (SQLException ex) {
+			log.error("DB 오류 - update(memberId={})", memberId);
+			throw new RuntimeException(ex);
+		} 
+	}
+	
+	public Member update(Connection con, String memberId, int money) {
+		String sql = "update member set money=? where member_id=?";
+		
+		try(PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setInt(1, money);
+			pstmt.setString(2, memberId);
+			
+			int resultSize = pstmt.executeUpdate();
+            if(resultSize == 0) 
+            	throw new NoSuchElementException("memberId = {} not found");
+            
+			log.info("수정된 row 수: {}", resultSize);
             return findById(con, memberId);
-        } catch (SQLException e) {
-            log.error("DB 오류 - findById(memberId={})", memberId);
+		} catch (SQLException e) {
+			log.error("DB 오류 - update(memberId={})", memberId);
             throw new RuntimeException(e);
-        }
-    }
-
-    // connection 닫지 않음
-    public Member findById(Connection con, String memberId) {
-        String sql = "select * from member where member_id = ?";
-        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-            pstmt.setString(1, memberId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    Member member = new Member(rs.getString("member_id"), rs.getInt("money"));
-                    log.info("조회 성공: {}", member);
-                    return member;
-                } else {
-                    log.warn("조회 실패: memberId={} 존재하지 않음", memberId);
-                    throw new NoSuchElementException("member not found memberId : " + memberId);
-                }
-            }
-        } catch (SQLException e) {
-            log.error("DB 오류 - findById(memberId={})", memberId);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Member update(String memberId, int money) {
-        log.info("수정 실행: memberId={}, money={}", memberId, money);
-        try (Connection con = dataSource.getConnection()) {
-            return update(con, memberId, money);
-        } catch (SQLException e) {
-            log.error("DB 오류 - update(memberId={}, money={})", memberId, money);
-            throw new RuntimeException(e);
-        }
-    }
-
-    // connection 닫지 않음
-    public Member update(Connection con, String memberId, int money) {
-        String sql = "update member set money=? where member_id = ?";
-        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-            pstmt.setInt(1, money);
-            pstmt.setString(2, memberId);
-            int resultSize = pstmt.executeUpdate();
-            log.info("수정된 row 수: {}", resultSize);
-            return findById(con, memberId); // 같은 커넥션 사용
-        } catch (SQLException e) {
-            log.error("DB 오류 - update(memberId={}, money={})", memberId, money);
-            throw new RuntimeException(e);
-        }
-    }
-
+		}
+	}
+	
     public void delete(String memberId) {
         String sql = "delete from member where member_id=?";
         log.info("삭제 실행: memberId={}", memberId);
-        executeUpdate(sql, memberId);
+        execute(sql, memberId);
     }
 
     public void deleteAll() {
         String sql = "delete from member";
         log.info("전체 삭제 실행");
-        executeUpdate(sql);
+        execute(sql);
     }
+	
+    // =========== 유틸 ============
+    
+	private Connection getConnection(DataSource dataSource) throws SQLException {
+		Connection con = dataSource.getConnection();
+		log.info("Get Connection = {}, class = {}", con, con.getClass());
+		return con;
+	}
+	
+	private void execute(String sql, Object... params) {
+	    try (Connection con = getConnection(dataSource); 
+	         PreparedStatement pstmt = con.prepareStatement(sql)) {
+	        for (int i = 0; i < params.length; i++) {
+	            pstmt.setObject(i + 1, params[i]);
+	        }
+	        int resultSize = pstmt.executeUpdate();
+	        log.info("쿼리 실행 완료: sql={}, params={}, 영향 row={}", sql, Arrays.toString(params), resultSize);
+	    } catch (SQLException ex) {
+	        log.error("DB Error sql={}, params={}, ex={}", sql, Arrays.toString(params), ex.getMessage(), ex);
+	        throw new RuntimeException(ex);
+	    }
+	}
 
-    // ======= 유틸 ========
-    private void executeUpdate(String ddl, Object... params) {
-        try (Connection con = dataSource.getConnection();
-             PreparedStatement pstmt = con.prepareStatement(ddl)) {
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
-            }
-            int resultSize = pstmt.executeUpdate();
-            log.info("쿼리 실행 완료: sql={}, params={}, 영향 받은 row={}", ddl, params, resultSize);
-        } catch (SQLException e) {
-            log.error("DB Error - SQL: {}", ddl);
-            throw new RuntimeException(e);
-        }
-    }
 }

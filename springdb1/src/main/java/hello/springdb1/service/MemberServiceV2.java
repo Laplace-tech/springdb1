@@ -19,8 +19,9 @@ public class MemberServiceV2 {
 
     public void accountTransfer(String fromId, String toId, int money) {
         Connection con = null;
+        
         try {
-            con = dataSource.getConnection();
+            con = dataSource.getConnection(); // 커넥션 생성
             
             con.setAutoCommit(false); // 트랜잭션 시작
             log.info("트랜잭션 시작 - fromId={}, toId={}, money={}", fromId, toId, money);
@@ -52,7 +53,7 @@ public class MemberServiceV2 {
     private void rollback(Connection con) {
         if (con != null) {
             try {
-                con.rollback();
+                con.rollback(); // 롤백
                 log.info("트랜잭션 롤백 완료");
             } catch (SQLException e) {
                 log.error("롤백 실패", e);
@@ -64,7 +65,7 @@ public class MemberServiceV2 {
         if (con != null) {
             try {
                 con.setAutoCommit(true); // 커넥션 풀 고려
-                con.close();
+                con.close(); // 자원 반납
                 log.info("커넥션 반환 완료");
             } catch (Exception e) {
                 log.error("커넥션 반환 실패", e);

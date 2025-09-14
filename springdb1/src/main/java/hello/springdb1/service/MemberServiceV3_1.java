@@ -16,15 +16,15 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * 1. 트랜잭션 시작
  *  - 서비스 계층에서 transactionManager.getTransaction() 호출 -> 트랜잭션 시작
- *  - 트랜잭션 매니저는 내부적으로 DataSource를 통해 커넥션(Connection) 생성
- *  - 생성된 커넥션을 수동 커밋 모드(autoCommit=false)로 변경 → DB 트랜잭션 시작
+ *  - 트랜잭션 매니저는 "내부적으로 DataSource를 통해 커넥션(Connection) 생성"
+ *  - 생성된 커넥션을 "수동 커밋 모드(autoCommit=false)로 변경" → DB 트랜잭션 시작
  *  - 커넥션을 트랜잭션 동기화 매니저(TransactionSynchronizationManager)에 보관
  *  - 트랜잭션 동기화 매니저는 ThreadLocal을 사용하므로 멀티쓰레드 환경에서도 안전하게 커넥션 관리 가능
  *  
  * 2. 로직 실행
  *  - 서비스 로직 -> 리포지토리 메서드 호출
  *  - 리포지토리는 커넥션 파라미터를 직접 받지 않음
- *  - 대신 DataSourceUtils.getConnection() 호출
+ *  - 대신 "DataSourceUtils.getConnection()" 호출
  *     → 트랜잭션 동기화 매니저에 보관된 커넥션을 꺼내 사용
  *  - 이 과정을 통해 같은 커넥션을 공유하면서 SQL 실행
  *  - 따라서 트랜잭션이 유지됨
@@ -58,6 +58,7 @@ public class MemberServiceV3_1 {
 	private final MemberRepositoryV3 repository;
 	
 	public void accountTransfer(String fromId, String toId, int money) {
+		
 		// 트랜잭션 시작 
 		TransactionStatus status = transactionManager
 				.getTransaction(new DefaultTransactionDefinition());

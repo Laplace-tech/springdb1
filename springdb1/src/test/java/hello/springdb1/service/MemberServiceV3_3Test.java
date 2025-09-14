@@ -3,7 +3,6 @@ package hello.springdb1.service;
 import static hello.springdb1.Springdb1Application.createHikariDataSource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.log;
 
 import java.sql.SQLException;
 
@@ -27,15 +26,27 @@ import hello.springdb1.repository.MemberRepositoryV3;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @SpringBootTest: 스프링 AOP를 적용하려면 스프링 컨테이너가 필요. 이 애노테이션이 있으면 테스트시 스프링 부트를 통해
- *                  스프링 컨테이너를 생성. 그리고 테스트에서 @Autowired등을 통해 스프링 컨테이너가 관리하는 빈들을
- *                  사용할 수 있음
- * @TestConfiguration: 테스트 안에서 내부 설정 클래스를 만들어서 사용하면서 이 에노테이션을 붙이면 스프링 부트가 자동으로
- *                     만들어주는 빈들에 추가로 필요한 스프링 빈들을 등록하고 테스트를 수행할 수 있음 TestConfig
- *                     DataSource: 스프링에서 기본으로 사용할 데이터소스를 스프링 빈으로 등록. 추가로 트랜잭션
- *                     매니저에서도 사용 DataSourceTransactionManager: 트랜잭션 매니저를 스프링 빈으로
- *                     등록 스프링이 제공하는 트랜잭션 AOP는 스프링 빈에 등록된 트랜잭션 매니저를 찾아서 사용하기 때문에
- *                     트랜잭션 매니저를 스프링 빈으로 등록해두어야 함
+ * @SpringBootTest
+ *  - 스프링 AOP를 적용하려면 반드시 스프링 컨테이너가 필요
+ *  - 이 애너테이션이 있으면 테스트 시 스프링 부트를 통해 컨테이너 생성
+ *  - @Autowired 등을 통해 컨테이너가 관리하는 스프링 빈을 주입받아 사용 가능
+ *  
+ *  
+ * @TestConfiguration
+ *  - 테스트 클래스 안에서만 사용할 별도의 설정 클래스를 정의할 때 사용
+ *  - 이 애너테이션을 붙이면 스프링 부트가 자동으로 등록하는 빈들 외에 
+ *    추가적으로 필요한 스프링 빈을 등록 가능
+ *    
+ * [TestConfig 내부 구성 예시]
+ *   ▷ DataSource
+ *       - 스프링에서 사용할 기본 DB 커넥션 풀(데이터소스)을 스프링 빈으로 등록
+ *       - 트랜잭션 매니저 또한 이 DataSource 기반으로 동작
+ *
+ *   ▷ DataSourceTransactionManager
+ *       - 트랜잭션 매니저를 스프링 빈으로 등록
+ *       - 스프링 트랜잭션 AOP는 컨테이너에 등록된 트랜잭션 매니저를 자동 탐색해서 사용
+ *       - 따라서 반드시 빈으로 등록해두어야 트랜잭션 AOP가 정상 동작
+ * 
  */
 
 @Slf4j
@@ -92,7 +103,7 @@ public class MemberServiceV3_3Test {
 	    log.info("memberService class={}", service.getClass());
 	    log.info("memberRepository class={}", repository.getClass());
 	    Assertions.assertThat(AopUtils.isAopProxy(service)).isTrue();
-	    Assertions.assertThat(AopUtils.isAopProxy(repository)).isFalse();
+	    Assertions.assertThat(AopUtils.isAopProxy(repository)).isFalse(); // @Repository 프록시
 	}
 	
 	@Test

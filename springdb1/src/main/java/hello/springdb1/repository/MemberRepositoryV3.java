@@ -11,7 +11,6 @@ import javax.sql.DataSource;
 
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.JdbcUtils;
-import org.springframework.stereotype.Repository;
 
 import hello.springdb1.domain.Member;
 import lombok.RequiredArgsConstructor;
@@ -106,7 +105,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * [스프링의 해결책: 트랜잭션 동기화 매니저]
  * - 스프링은 TransactionSynchronizationManager 를 제공
- * - 내부적으로 ThreadLocal 을 사용하여 커넥션을 현재 쓰레드에 바인딩(저장)
+ * - 내부적으로 ThreadLocal 을 사용하여 "커넥션을 현재 쓰레드에 바인딩(저장)"
  *   → 즉, 같은 쓰레드에서 실행되는 코드라면 어디서든 동일한 커넥션을 조회할 수 있음
  * - 따라서 파라미터로 Connection 을 넘길 필요가 없음
  *
@@ -118,8 +117,8 @@ import lombok.extern.slf4j.Slf4j;
  * 2) 리포지토리 동작
  *    - Repository 는 DataSourceUtils.getConnection(dataSource) 를 호출
  *    - DataSourceUtils 는 단순히 DataSource 에서 새로운 커넥션을 생성하지 않고,
- *      현재 스레드에 트랜잭션 매니저가 바인딩해둔 커넥션을 꺼내서 반환
- *    - 따라서 Repository 는 별도 커넥션 파라미터 없이 동일한 트랜잭션 커넥션 사용 가능
+ *      "현재 스레드에 트랜잭션 매니저가 바인딩해둔 커넥션"을 꺼내서 반환
+ *    - 따라서 Repository 는 "별도 커넥션 파라미터 없이 동일한 트랜잭션 커넥션 사용 가능"
  *
  * 3) 트랜잭션 종료
  *    - 트랜잭션 매니저가 commit() 또는 rollback() 호출
@@ -144,11 +143,13 @@ public class MemberRepositoryV3 {
         String ddl = "create table if not exists member (" +
                      "member_id varchar(10) primary key, " +
                      "money integer not null default 0)";
+		log.info("Table member creating...");
         execute(ddl);
     }
 
     public void dropTable() {
         String ddl = "drop table if exists member";
+		log.info("Table member dropping...");
         execute(ddl);
     }
 
@@ -161,7 +162,7 @@ public class MemberRepositoryV3 {
         PreparedStatement pstmt = null;
         
         try {
-        	con = DataSourceUtils.getConnection(dataSource);
+        	con = getConnection();
         	pstmt = con.prepareStatement(sql);
         	
         	pstmt.setString(1, member.getMemberId());
@@ -192,7 +193,6 @@ public class MemberRepositoryV3 {
         	pstmt.setString(1, memberId);
         	
         	rs = pstmt.executeQuery();
-        	
         	if(rs.next()) {
         		return new Member(rs.getString("member_id"), rs.getInt("money"));
         	} else {
@@ -279,6 +279,10 @@ public class MemberRepositoryV3 {
     	return DataSourceUtils.getConnection(dataSource);
     }
     
+    private void close(Statement stmt, Connection con) {
+    	close(null, stmt, con);
+    }
+    
 	private void close(ResultSet rs, Statement stmt, Connection con) {
 		JdbcUtils.closeResultSet(rs);
 		JdbcUtils.closeStatement(stmt);
@@ -293,17 +297,15 @@ public class MemberRepositoryV3 {
 		DataSourceUtils.releaseConnection(con, dataSource);
 	}
 	
-    private void close(Statement stmt, Connection con) {
-    	close(null, stmt, con);
-    }
-    
     // ======= 유틸 ========
     private void execute(String ddl, Object... params) {
     	Connection con = null;
     	PreparedStatement pstmt = null;
-        try {
+        
+    	try {
         	con = getConnection();
         	pstmt = con.prepareStatement(ddl);
+        	
             for (int i = 0; i < params.length; i++) {
                 pstmt.setObject(i + 1, params[i]);
             }

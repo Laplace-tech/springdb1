@@ -26,8 +26,8 @@ import lombok.extern.slf4j.Slf4j;
  *   요청 시 즉시 "대여"해 쓰기 때문에 지연을 크게 줄여줌. 
  * - 추가 이점: 서버별 최대 커넥션 수를 제한 → DB 과부화/폭주 방지(보호막 역할)
  * 
- * 2) DataSource vs DriverManager 
- * - DriverManager.getConnection(...)은 호출할 때마다 "새 커넥션"을 만듦. 
+ * 2) DataSource vs DriverManager
+ * - DriverManager.getConnection(...)은 호출할 때마다 "새 커넥션"을 만듦.
  * - DataSource 는 커넥션을 "공급"하는 표준 인터페이스(팩토리) 
  *   * 일반 구현: 매번 새 커넥션 생성(테스트/간단 용도) : DriverManagerDataSource
  *   * 풀링 구현: 커넥션 풀에서 가져와 반환(실무 표준) : HikariDataSource 
@@ -39,8 +39,8 @@ import lombok.extern.slf4j.Slf4j;
  * - 런 타임: 
  *  1) 스레드가 DataSource.getConnection() 호출 → "논리 커넥션(프록시)" 대여 
  *  2) SQL 수행(물리 커넥션과 이미 TCP로 연결됨 → 즉시 전송) 
- *  3) conn.close() 호출 시 진짜 종료가 아니라 커넥션 풀로 "반납" 
- * - 반납 시 풀 구현은 커넥션 상태를 초기화(autocommit/readOnly/isolation 등)하여 다음 사용자에게 안전하게 재사용.
+ *  3) con.close() 호출 시 진짜 종료가 아니라 커넥션 풀로 "반납" 
+ * - 반납 시 풀 구현은 "커넥션 상태를 초기화"(autocommit/readOnly/isolation 등)하여 다음 사용자에게 안전하게 재사용.
  *
  * 4) 주요 용어 정리 
  * - 물리 커넥션(Physical): DB까지 실제로 연결된 소켓/세션 
@@ -69,7 +69,7 @@ import lombok.extern.slf4j.Slf4j;
  * - 커넥션은 스레드마다 빌려 쓰고 "반드시" finally/try-with-resources로 반납 
  * - 오토커밋 사용 여부: 
  *   * 스프링 @Transactional 사용 시 수동으로 setAutoCommit(false) 금지(프레임워크가 관리). 
- * - 트랜잭션 경계(시작~커밋/롤백)를 짧게. 커넥션 장시간 점유 = 풀 고갈의 지름길 
+ * - 트랜잭션 경계(시작~커밋/롤백)를 짧게. "커넥션 장시간 점유 = 풀 고갈의 지름길" 
  * - 커넥션 상태(격리수준/읽기전용/스키마 등)를 변경했다면, 프레임워크나 풀에서 초기화해줌. 
  *   직접 관리 시 초기화 누락 주의.
  * 
@@ -106,87 +106,93 @@ public class MemberRepositoryV1 {
 
 	private final DataSource dataSource;
 	
+	/**
+	 * 테이블 생성
+	 */
 	public void initTable() {
-		String ddl = "create table if not exists member (" +
-					 "member_id varchar(10) primary key, " + 
-					 "money integer not null default 0)";
-		
-		try(Connection con = getConnection(dataSource);
-			Statement stmt = con.createStatement()) {
-			
+		String ddl = "create table if not exists member (" 
+					+ "member_id varchar(10) primary key, "
+					+ "money integer not null default 0)";
+
+		try (Connection con = getConnection(dataSource);
+			 Statement stmt = con.createStatement()) {
+
 			stmt.execute(ddl);
 			log.info("Table member created!");
-		} catch (SQLException e) {
-			log.error("DB Error", e);
-			throw new RuntimeException(e);
+		} catch (SQLException ex) {
+			log.error("DB Error : {}", ex.getMessage());
+			throw new RuntimeException(ex);
 		}
 	}
 	
+	/**
+	 * 테이블 삭제
+	 */
 	public void dropTable() {
 		String ddl = "drop table if exists member";
-		
-		try(Connection con = getConnection(dataSource);
-			Statement stmt = con.createStatement()) {
-			
+
+		try (Connection con = getConnection(dataSource);
+				Statement stmt = con.createStatement()) {
+
 			stmt.execute(ddl);
 			log.info("Table member dropped!");
-		} catch (SQLException e) {
-	        log.error("DB Error", e);
-	        throw new RuntimeException(e);
+		} catch (SQLException ex) {
+			log.error("DB Error : {}", ex.getMessage());
+			throw new RuntimeException(ex);
 		}
 	}
 	
 	public Member save(Member member) {
 		String sql = "insert into member(member_id, money) values (?, ?)";
-		
-		try(Connection con = getConnection(dataSource);
-			PreparedStatement pstmt = con.prepareStatement(sql)) {
-			
-			pstmt.setString(1, member.getMemberId());
-			pstmt.setInt(2, member.getMoney());
-			
-			int resultSize = pstmt.executeUpdate();
-			log.info("save : resultSize={}", resultSize);
-			
-			return member;
-		} catch (SQLException e) {
-	        log.error("DB Error", e);
-	        throw new RuntimeException(e);
-		}
-	}
 	
+	try(Connection con = getConnection(dataSource);
+		PreparedStatement pstmt = con.prepareStatement(sql)) {
+		
+		pstmt.setString(1, member.getMemberId());
+		pstmt.setInt(2, member.getMoney());
+		
+		int resultSize = pstmt.executeUpdate();
+		log.info("save : resultSize={}", resultSize);
+		
+		return member;
+	} catch (SQLException ex) {
+		log.error("DB Error : {}", ex.getMessage());
+		throw new RuntimeException(ex);
+	}
+	}
+
 	public Member findById(String memberId) {
 		String sql = "select * from member where member_id = ?";
 
-		try (Connection con = getConnection(dataSource); 
+		try (Connection con = getConnection(dataSource);
 			 PreparedStatement pstmt = con.prepareStatement(sql)) {
-			
+
 			pstmt.setString(1, memberId);
 
-			try (ResultSet resultSet = pstmt.executeQuery()) {
-				if (resultSet.next()) {
-					Member findMember = new Member();
-					findMember.setMemberId(resultSet.getString("member_id"));
-					findMember.setMoney(resultSet.getInt("money"));
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					Member findMember = new Member(
+							rs.getString("member_id"), 
+							rs.getInt("money"));
+					
 					log.info("findById = {}", findMember);
 					return findMember;
 				} else {
-					throw new NoSuchElementException("member not found memberId : " + memberId);
+					throw new NoSuchElementException("member not found member_id :" + memberId);
 				}
 			}
-
-		} catch (SQLException e) {
-			log.error("DB Error", e);
-			throw new RuntimeException(e);
+		} catch (SQLException ex) {
+			log.error("DB Error : {}", ex.getMessage());
+			throw new RuntimeException(ex);
 		}
 	}
 
 	public Member update(String memberId, int money) {
-		String sql = "update member set money=? where member_id = ?";
-		
-		try(Connection con = getConnection(dataSource);
-			PreparedStatement pstmt = con.prepareStatement(sql)) {
-			
+		String sql = "update member set money=? where member_id=?";
+
+		try (Connection con = getConnection(dataSource);
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
+
 			pstmt.setInt(1, money);
 			pstmt.setString(2, memberId);
 			
@@ -194,46 +200,45 @@ public class MemberRepositoryV1 {
 			log.info("update = {}", resultSize);
 			
 			return findById(memberId);
-		} catch (SQLException e) {
-	        log.error("DB Error", e);
-	        throw new RuntimeException(e);
+		} catch (SQLException ex) {
+			log.error("DB Error : {}", ex.getMessage());
+			throw new RuntimeException(ex);
 		}
 	}
 	
 	public void delete(String memberId) {
 		String sql = "delete from member where member_id=?";
 		
-		try(Connection con = getConnection(dataSource);
-			PreparedStatement pstmt = con.prepareStatement(sql)) {
-			
+		try (Connection con = getConnection(dataSource);
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
+
 			pstmt.setString(1, memberId);
 			
 			int resultSize = pstmt.executeUpdate();
 			log.info("delete = {}", resultSize);
-		} catch (SQLException e) {
-	        log.error("DB Error", e);
-	        throw new RuntimeException(e);
+		} catch (SQLException ex) {
+			log.error("DB Error : {}", ex.getMessage());
+			throw new RuntimeException(ex);
 		}
 	}
-	
+
 	public void deleteAll() {
 		String sql = "delete from member";
 		
-		try(Connection con = getConnection(dataSource);
-			Statement stmt = con.createStatement()) {
+		try (Connection con = getConnection(dataSource);
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			
-			int resultSize = stmt.executeUpdate(sql);
+			int resultSize = pstmt.executeUpdate();
 			log.info("deleteAll resultSize={}", resultSize);
-			
 		} catch (SQLException e) {
-	        log.error("DB Error", e);
-	        throw new RuntimeException(e);
+			log.error("DB Error", e);
+			throw new RuntimeException(e);
 		}
 	}
 	
 	private Connection getConnection(DataSource dataSource) throws SQLException {
 		Connection con = dataSource.getConnection();
-		log.info("get connection={}, class={}", con, con.getClass());
+		log.info("Get Connection = {}, class = {}", con, con.getClass());
 		return con;
 	}
 	
