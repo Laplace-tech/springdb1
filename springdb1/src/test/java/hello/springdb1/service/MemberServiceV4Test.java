@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.sql.SQLException;
 
+import javax.sql.DataSource;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,9 +15,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 
 import hello.springdb1.domain.Member;
 import hello.springdb1.repository.MemberRepository;
+import hello.springdb1.repository.MemberRepositoryV4_2;
+import hello.springdb1.repository.MemberRepositoryV5;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -44,12 +53,41 @@ public class MemberServiceV4Test {
         repository.dropTable();
     }
 
+    @TestConfiguration
+    @RequiredArgsConstructor
+    static class TestConfig {
+
+        private final DataSource dataSource; // 자동 생성된 DataSource 주입
+        
+//        @Bean
+//        SQLErrorCodeSQLExceptionTranslator sqlErrorCodeSQLExceptionTranslator() {
+//        	return new SQLErrorCodeSQLExceptionTranslator(dataSource);
+//        }
+     
+        @Bean
+        JdbcTemplate jdbcTemplate() {
+        	return new JdbcTemplate(dataSource);
+        }
+        
+        @Bean
+        MemberRepository memberRepository() {
+//          return new MemberRepositoryV4_1(dataSource); // 단순 예외 변환
+//        	return new MemberRepositoryV4_2(dataSource, sqlErrorCodeSQLExceptionTranslator());
+        	return new MemberRepositoryV5(jdbcTemplate());
+        }
+
+        @Bean
+        MemberServiceV4 MemberService4() {
+        	return new MemberServiceV4(memberRepository());
+		}
+    }
+    
     @Test
     void AopCheck() {
         log.info("memberService class={}", service.getClass());
         log.info("memberRepository class={}", repository.getClass());
         Assertions.assertThat(AopUtils.isAopProxy(service)).isTrue(); // 트랜잭션 AOP 프록시 확인
-        Assertions.assertThat(AopUtils.isAopProxy(repository)).isTrue(); // @Repository 프락시
+        Assertions.assertThat(AopUtils.isAopProxy(repository)).isFalse(); // @Repository 프락시
     }
 
     @Test

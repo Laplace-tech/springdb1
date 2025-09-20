@@ -6,7 +6,7 @@ public interface MemberRepository {
 
 	Member save(Member member);
 	Member findById(String memberId);
-	Member update(String memberId, int money);
+	void update(String memberId, int money);
 	void delete(String memberId);
 	
 	/**

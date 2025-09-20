@@ -104,6 +104,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class MemberRepositoryV1 {
 
+	/**
+	 * 외부에서 DataSource를 주입 받아서 사용.
+	 * -> HikariDataSource, DriverManagerDataSource 등을 사용
+	 */
 	private final DataSource dataSource;
 	
 	/**
@@ -132,7 +136,7 @@ public class MemberRepositoryV1 {
 		String ddl = "drop table if exists member";
 
 		try (Connection con = getConnection(dataSource);
-				Statement stmt = con.createStatement()) {
+			 Statement stmt = con.createStatement()) {
 
 			stmt.execute(ddl);
 			log.info("Table member dropped!");
@@ -144,21 +148,20 @@ public class MemberRepositoryV1 {
 	
 	public Member save(Member member) {
 		String sql = "insert into member(member_id, money) values (?, ?)";
-	
-	try(Connection con = getConnection(dataSource);
-		PreparedStatement pstmt = con.prepareStatement(sql)) {
-		
-		pstmt.setString(1, member.getMemberId());
-		pstmt.setInt(2, member.getMoney());
-		
-		int resultSize = pstmt.executeUpdate();
-		log.info("save : resultSize={}", resultSize);
-		
-		return member;
-	} catch (SQLException ex) {
-		log.error("DB Error : {}", ex.getMessage());
-		throw new RuntimeException(ex);
-	}
+
+		try (Connection con = getConnection(dataSource);
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
+
+			pstmt.setString(1, member.getMemberId());
+			pstmt.setInt(2, member.getMoney());
+
+			int resultSize = pstmt.executeUpdate();
+			log.info("save : resultSize={}", resultSize);
+			return member;
+		} catch (SQLException ex) {
+			log.error("DB Error : {}", ex.getMessage());
+			throw new RuntimeException(ex);
+		}
 	}
 
 	public Member findById(String memberId) {
@@ -187,7 +190,7 @@ public class MemberRepositoryV1 {
 		}
 	}
 
-	public Member update(String memberId, int money) {
+	public void update(String memberId, int money) {
 		String sql = "update member set money=? where member_id=?";
 
 		try (Connection con = getConnection(dataSource);
@@ -198,8 +201,6 @@ public class MemberRepositoryV1 {
 			
 			int resultSize = pstmt.executeUpdate();
 			log.info("update = {}", resultSize);
-			
-			return findById(memberId);
 		} catch (SQLException ex) {
 			log.error("DB Error : {}", ex.getMessage());
 			throw new RuntimeException(ex);

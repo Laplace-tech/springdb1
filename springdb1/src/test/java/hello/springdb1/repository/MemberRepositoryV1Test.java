@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MemberRepositoryV1Test {
 
 	private final DataSource hikariDataSource = createHikariDataSource();
-	private final DataSource driverManagerdataSource = createDriverManagerDataSource();
+//	private final DataSource driverManagerdataSource = createDriverManagerDataSource();
 	private final MemberRepositoryV1 repository = new MemberRepositoryV1(hikariDataSource);
 
 	@BeforeAll
@@ -35,6 +35,7 @@ public class MemberRepositoryV1Test {
 
 	@AfterEach
 	void afterEach() {
+		repository.deleteAll();
 		repository.dropTable();
 	}
 
@@ -52,8 +53,9 @@ public class MemberRepositoryV1Test {
 		assertThat(findMember).isEqualTo(member);
 
 		// then - update
-		Member updatedMember = repository.update(member.getMemberId(), 6969);
-		assertThat(updatedMember.getMoney()).isEqualTo(6969);
+		repository.update(member.getMemberId(), 8888);
+		Member updatedMember = repository.findById(member.getMemberId());
+		assertThat(updatedMember.getMoney()).isEqualTo(8888);
 
 		// then - delete
 		repository.delete(member.getMemberId());

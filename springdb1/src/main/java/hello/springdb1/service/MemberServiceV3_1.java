@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
  * 2. 로직 실행
  *  - 서비스 로직 -> 리포지토리 메서드 호출
  *  - 리포지토리는 커넥션 파라미터를 직접 받지 않음
- *  - 대신 "DataSourceUtils.getConnection()" 호출
+ *  - 대신 "DataSourceUtils.getConnection(dataSource)" 호출
  *     → 트랜잭션 동기화 매니저에 보관된 커넥션을 꺼내 사용
  *  - 이 과정을 통해 같은 커넥션을 공유하면서 SQL 실행
  *  - 따라서 트랜잭션이 유지됨

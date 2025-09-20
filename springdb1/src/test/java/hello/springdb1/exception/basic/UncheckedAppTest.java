@@ -11,15 +11,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UncheckedAppTest {
 
-	@Test
-	void unchecked() {
-		Controller controller = new Controller();
-		assertThatThrownBy(() -> controller.request())
-			.isInstanceOf(Exception.class);
-	}
+    @Test
+    void unchecked() {
+        Controller controller = new Controller();
+        assertThatThrownBy(() -> controller.request())
+          .isInstanceOf(Exception.class);
+    }
 	
 	@Test
-	void printEx() {
+	void printException() {
 		Controller controller = new Controller();
 		try {
 			controller.request();
@@ -47,7 +47,7 @@ public class UncheckedAppTest {
 	}
 	
 	static class NetworkClient {
-		public void call() {
+		public void call() {	
 			throw new RuntimeConnectException("연결 실패");
 		}
 	}
@@ -62,16 +62,16 @@ public class UncheckedAppTest {
 		}
 		
 		private void runSQL() throws SQLException {
-			throw new SQLException("SQLException");
+			throw new SQLException("SQL Exception");
 		}
 	}
 	
-	@SuppressWarnings("serial")
+    @SuppressWarnings("serial")
 	static class RuntimeConnectException extends RuntimeException {
-		public RuntimeConnectException(String message) {
-			super(message);
-		}
-	}
+        public RuntimeConnectException(String message) {
+            super(message);
+        }
+    }
 	
 	@SuppressWarnings("serial")
 	static class RuntimeSQLException extends RuntimeException {
@@ -80,4 +80,5 @@ public class UncheckedAppTest {
 			super(cause);
 		}
 	}
+	
 }

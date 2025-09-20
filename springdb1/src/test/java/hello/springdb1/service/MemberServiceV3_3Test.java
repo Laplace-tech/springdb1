@@ -65,6 +65,7 @@ public class MemberServiceV3_3Test {
 	
 	@TestConfiguration
 	static class TestConfig {
+		
 		@Bean
 		DataSource dataSource() {
 			return createHikariDataSource();

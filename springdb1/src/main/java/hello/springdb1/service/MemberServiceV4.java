@@ -1,8 +1,5 @@
 package hello.springdb1.service;
 
-import java.sql.SQLException;
-
-import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import hello.springdb1.domain.Member;
@@ -11,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Repository
 @RequiredArgsConstructor
 public class MemberServiceV4 {
 
@@ -19,7 +15,7 @@ public class MemberServiceV4 {
 
 	// 트랜잭션 AOP
 	@Transactional
-	public void accountTransfer(String fromId, String toId, int money) throws SQLException {
+	public void accountTransfer(String fromId, String toId, int money) {
 		bizLogic(fromId, toId, money);
 	}
 

@@ -72,11 +72,11 @@ public class Springdb1Application {
 	public static DriverManagerDataSource createDriverManagerDataSource() {
 		return new DriverManagerDataSource(URL, USERNAME, PASSWORD);
 	}
-	
+
 	public static DataSourceTransactionManager createDataSourceTransactionManager(DataSource dataSource) {
 		return new DataSourceTransactionManager(dataSource);
 	}
-	
+
 	public static void useDataSource(DataSource dataSource) throws SQLException {
 		try (Connection con = dataSource.getConnection()) {
 			log.info("connection={}, class={}", con, con.getClass());

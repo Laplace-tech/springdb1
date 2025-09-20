@@ -37,16 +37,15 @@ public class CheckedAppTest {
 		}
 	}
 	
+	static class Repository {
+		public void call() throws SQLException {
+			throw new SQLException("SQL Exception");
+		}
+	}
+	
 	static class NetworkClient {
 		public void call() throws ConnectException {
 			throw new ConnectException("연결 실패");
 		}
 	}
-	
-	static class Repository {
-		public void call() throws SQLException {
-			throw new SQLException("SQLException");
-		}
-	}
-	
 }

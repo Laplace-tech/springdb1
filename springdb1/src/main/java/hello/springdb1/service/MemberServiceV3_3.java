@@ -1,7 +1,5 @@
 package hello.springdb1.service;
 
-import java.sql.SQLException;
-
 import org.springframework.transaction.annotation.Transactional;
 import hello.springdb1.domain.Member;
 import hello.springdb1.repository.MemberRepositoryV3;
@@ -13,8 +11,8 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * 1. 지금까지의 흐름
  *  - JDBC 직접 트랜잭션 처리 (복잡, 중복 많음)
- *  - 트랜잭션 추상화 도입 (PlatformTransactionManager)
- *  - 트랜잭션 템플릿 도입 (TransactionTemplate)
+ *  - 트랜잭션 "추상화" 도입 : (PlatformTransactionManager)
+ *  - 트랜잭션 "템플릿" 도입 (TransactionTemplate)
  *    -> 반복 제거했지만, 여전히 서비스 코드에 트랜잭션 로직이 섞여 있음
  *    
  * 2. AOP(프록시) 도입 전 문제
@@ -61,7 +59,7 @@ public class MemberServiceV3_3 {
 	
 	// 트랜잭션 AOP
 	@Transactional
-	public void accountTransfer(String fromId, String toId, int money) throws SQLException {
+	public void accountTransfer(String fromId, String toId, int money) {
 		bizLogic(fromId, toId, money);
 	}
 

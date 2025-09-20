@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Bean;
 
 import hello.springdb1.domain.Member;
 import hello.springdb1.repository.MemberRepositoryV3;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -95,16 +96,17 @@ public class MemberServiceV3_4Test {
     private MemberServiceV3_3 service;
 
     /**
-     * 테스트용 설정
-     * 스프링 부트가 application.properties를 기반으로 DataSource와 TransactionManager를 자동 등록
-     * TestConfig에서는 repository와 service만 Bean으로 등록
+     * [테스트용 설정]
+     *  스프링 부트가 application.properties를 기반으로 
+     *  "DataSource"와 "TransactionManager를 자동 등록
+     *  TestConfig 에서는 'repository'와 'service'만 'Bean'으로 등록
      */
     @TestConfiguration
+    @RequiredArgsConstructor
     static class TestConfig {
 
-        @Autowired
-        private DataSource dataSource; // 자동 생성된 DataSource 주입
-
+        private final DataSource dataSource; // 자동 생성된 DataSource 주입
+        
         @Bean
         MemberRepositoryV3 memberRepositoryV3() {
             return new MemberRepositoryV3(dataSource);

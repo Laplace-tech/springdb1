@@ -22,7 +22,7 @@ public class MemberRepositoryV0 {
 					+ "member_id varchar(10) primary key, "
 					+ "money integer not null default 0)";
 
-		try (Connection con = DBConnectionUtil.getConnection(); 
+		try (Connection con = DBConnectionUtil.getConnection();
 			 Statement stmt = con.createStatement()) {
 
 			stmt.execute(ddl);
@@ -39,7 +39,7 @@ public class MemberRepositoryV0 {
 	public void dropTable() {
 		String ddl = "drop table if exists member";
 
-		try (Connection con = DBConnectionUtil.getConnection(); 
+		try (Connection con = DBConnectionUtil.getConnection();
 			 Statement stmt = con.createStatement()) {
 
 			stmt.execute(ddl);
@@ -52,27 +52,26 @@ public class MemberRepositoryV0 {
 	
 	public Member save(Member member) {
 		String sql = "insert into member(member_id, money) values (?, ?)";
-	
-	try(Connection con = DBConnectionUtil.getConnection();
-		PreparedStatement pstmt = con.prepareStatement(sql)) {
-		
-		pstmt.setString(1, member.getMemberId());
-		pstmt.setInt(2, member.getMoney());
-		
-		int resultSize = pstmt.executeUpdate();
-		log.info("save : resultSize={}", resultSize);
-		
-		return member;
-	} catch (SQLException ex) {
-		log.error("DB Error : {}", ex.getMessage());
-		throw new RuntimeException(ex);
-	}
+
+		try (Connection con = DBConnectionUtil.getConnection();
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
+
+			pstmt.setString(1, member.getMemberId());
+			pstmt.setInt(2, member.getMoney());
+
+			int resultSize = pstmt.executeUpdate();
+			log.info("save : resultSize={}", resultSize);
+			return member;
+		} catch (SQLException ex) {
+			log.error("DB Error : {}", ex.getMessage());
+			throw new RuntimeException(ex);
+		}
 	}
 
 	public Member findById(String memberId) {
 		String sql = "select * from member where member_id = ?";
 
-		try (Connection con = DBConnectionUtil.getConnection(); 
+		try (Connection con = DBConnectionUtil.getConnection();
 			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 
 			pstmt.setString(1, memberId);
@@ -98,7 +97,7 @@ public class MemberRepositoryV0 {
 	public void update(String memberId, int money) {
 		String sql = "update member set money=? where member_id=?";
 
-		try (Connection con = DBConnectionUtil.getConnection(); 
+		try (Connection con = DBConnectionUtil.getConnection();
 			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 
 			pstmt.setInt(1, money);

@@ -136,116 +136,150 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class MemberRepositoryV3 {
 
-    private final DataSource dataSource;
+	/**
+	 * 외부에서 DataSource를 주입 받아서 사용.
+	 * -> HikariDataSource, DriverManagerDataSource 등을 사용
+	 */
+	private final DataSource dataSource;
+	
+	/**
+	 * 테이블 생성
+	 */
+	public void initTable() {
+		String ddl = "create table if not exists member (" + 
+					 "member_id varchar(10) primary key, " + 
+					 "money integer not null default 0)";
 
-    // ========== 테이블 관리 ================
-    public void initTable() {
-        String ddl = "create table if not exists member (" +
-                     "member_id varchar(10) primary key, " +
-                     "money integer not null default 0)";
-		log.info("Table member creating...");
-        execute(ddl);
-    }
-
-    public void dropTable() {
-        String ddl = "drop table if exists member";
-		log.info("Table member dropping...");
-        execute(ddl);
-    }
-
-    // =========== CRUD ===========
-    public Member save(Member member) {
-        String sql = "insert into member(member_id, money) values (?, ?)";
-        log.info("저장 실행: memberId={}, money={}", member.getMemberId(), member.getMoney());
-        
-        Connection con = null;
-        PreparedStatement pstmt = null;
-        
-        try {
-        	con = getConnection();
-        	pstmt = con.prepareStatement(sql);
-        	
-        	pstmt.setString(1, member.getMemberId());
-        	pstmt.setInt(2, member.getMoney());
-        	pstmt.executeUpdate();
-        	
-        	return member;
-        } catch (SQLException e) {
-            log.error("DB 오류 - save(memberId={})", member.getMemberId(), e);
-            throw new RuntimeException(e);
-        } finally {
-        	close(pstmt, con);
-        }
-    }
-
-    public Member findById(String memberId) {
-        String sql = "select * from member where member_id = ?";
-    	log.info("단건 조회 실행: memberId={}", memberId);
-        
-        Connection con = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        
-        try {
-        	con = getConnection();
-        	pstmt = con.prepareStatement(sql);
-        	
-        	pstmt.setString(1, memberId);
-        	
-        	rs = pstmt.executeQuery();
-        	if(rs.next()) {
-        		return new Member(rs.getString("member_id"), rs.getInt("money"));
-        	} else {
-        		throw new NoSuchElementException("member not found memberId = " + memberId);
-        	}
-        } catch (SQLException e) {
-            log.error("DB 오류 - findById(memberId={})", memberId, e);
-            throw new RuntimeException(e);
-        } finally {
-			close(rs, pstmt, con);
+		Connection con = null;
+		Statement stmt = null;
+		
+		try {
+			con = getConnection();
+			stmt = con.createStatement();
+			stmt.execute(ddl);
+			log.info("Table member created!");
+		} catch (SQLException e) {
+			log.error("DB Error - initTable: {}", ddl);
+			throw new RuntimeException(e);
+		} finally {
+			close(stmt, con);
 		}
-    }
+	}
+	
+	/**
+	 * 테이블 삭제
+	 */
+	public void dropTable() {
+		String ddl = "drop table if exists member";
 
-    public Member update(String memberId, int money) {
-    	String sql = "update member set money=? where member_id = ?";
-        log.info("수정 실행: memberId={}, money={}", memberId, money);
-        
-        Connection con = null;
-        PreparedStatement pstmt = null;
-        try {
-        	con = getConnection();
-        	pstmt = con.prepareStatement(sql);
-        	
-        	pstmt.setInt(1, money);
-        	pstmt.setString(2, memberId);
-        	
-        	int resultSize = pstmt.executeUpdate();
-        	log.info("수정된 row 수: {}", resultSize);
-        	
-        	return findById(memberId);
-        } catch (SQLException e) {
-            log.error("DB 오류 - update(memberId={}, money={})", memberId, money);
-            throw new RuntimeException(e);
-        } finally {
-			close(pstmt, con);
+		Connection con = null;
+		Statement stmt = null;
+
+		try {
+			con = getConnection();
+			stmt = con.createStatement();
+			stmt.execute(ddl);
+			log.info("Table member dropped!");
+		} catch (SQLException e) {
+			log.error("DB Error - dropTable: {}", ddl);
+			throw new RuntimeException(e);
+		} finally {
+			close(stmt, con);
 		}
-    }
-
-	public void delete(String memberId) {
-		String sql = "delete from member where member_id=?";
-		log.info("삭제 실행: memberId={}", memberId);
+	}
+	
+	public Member save(Member member) {
+		String sql = "insert into member(member_id, money) values (?, ?)";
 
 		Connection con = null;
 		PreparedStatement pstmt = null;
+		
+		try {
+			con = getConnection();
+			pstmt = con.prepareStatement(sql);
+			pstmt.setString(1, member.getMemberId());
+			pstmt.setInt(2, member.getMoney());
+			
+			int resultSize = pstmt.executeUpdate();
+			log.info("save : resultSize={}", resultSize);
+			return member;
+		} catch (SQLException e) {
+			log.error("DB Error - save: {}", sql);
+			throw new RuntimeException(e);
+		} finally {
+			close(pstmt, con);
+		}
+	}
+	
+	public Member findById(String memberId) {
+		String sql = "select * from member where member_id = ?";
+
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+
+		try {
+			con = getConnection();
+			pstmt = con.prepareStatement(sql);
+			pstmt.setString(1, memberId);
+			
+			rs = pstmt.executeQuery();
+			if (rs.next()) {
+				Member findMember = new Member(
+						rs.getString("member_id"), 
+						rs.getInt("money"));
+
+				log.info("findById = {}", findMember);
+				return findMember;
+			} else {
+				throw new NoSuchElementException("member not found member_id :" + memberId);
+			}
+		} catch (SQLException e) {
+			log.error("DB Error - findById: {}", sql);
+			throw new RuntimeException(e);
+		} finally {
+			close(rs, pstmt, con);
+		}
+	}
+
+	public void update(String memberId, int money) {
+		String sql = "update member set money=? where member_id=?";
+
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		
 		try {
 			con = getConnection();
 			pstmt = con.prepareStatement(sql);
 			
+			pstmt.setInt(1, money);
+			pstmt.setString(2, memberId);
+			
+			int resultSize = pstmt.executeUpdate();
+			log.info("update = {}", resultSize);
+		} catch (SQLException e) {
+			log.error("DB Error - update: {}", sql);
+			throw new RuntimeException(e);
+		} finally {
+			close(pstmt, con);
+		}
+	}
+	
+	public void delete(String memberId) {
+		String sql = "delete from member where member_id=?";
+		
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		
+		try {
+			con = getConnection();
+			pstmt = con.prepareStatement(sql);
 			pstmt.setString(1, memberId);
 			
-			pstmt.executeUpdate(sql);
+			int resultSize = pstmt.executeUpdate();
+			log.info("delete = {}", resultSize);
 		} catch (SQLException e) {
-			log.error("DB Error - SQL: {}", sql);
+			log.error("DB Error - delete: {}", sql);
 			throw new RuntimeException(e);
 		} finally {
 			close(pstmt, con);
@@ -254,23 +288,24 @@ public class MemberRepositoryV3 {
 
 	public void deleteAll() {
 		String sql = "delete from member";
-		log.info("전체 삭제 실행");
 		
 		Connection con = null;
-		Statement stmt = null;
+		PreparedStatement pstmt = null;
+		
 		try {
 			con = getConnection();
-			stmt = con.createStatement();
+			pstmt = con.prepareStatement(sql);
 			
-			stmt.executeUpdate(sql);
+			int resultSize = pstmt.executeUpdate();
+			log.info("deleteAll resultSize={}", resultSize);
 		} catch (SQLException e) {
-			log.error("DB Error - SQL: {}", sql);
+			log.error("DB Error - deleteAll: {}", sql);
 			throw new RuntimeException(e);
 		} finally {
-			close(stmt, con);
+			close(pstmt, con);
 		}
 	}
-
+	
     private Connection getConnection() {
     	/**
     	 * 트랜잭션 동기화 매니저가 관리하는 커넥션이 있으면 해당 커넥션을 반환
@@ -297,25 +332,4 @@ public class MemberRepositoryV3 {
 		DataSourceUtils.releaseConnection(con, dataSource);
 	}
 	
-    // ======= 유틸 ========
-    private void execute(String ddl, Object... params) {
-    	Connection con = null;
-    	PreparedStatement pstmt = null;
-        
-    	try {
-        	con = getConnection();
-        	pstmt = con.prepareStatement(ddl);
-        	
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
-            }
-            int resultSize = pstmt.executeUpdate();
-            log.info("쿼리 실행 완료: sql={}, params={}, 영향 받은 row={}", ddl, params, resultSize);
-        } catch (SQLException e) {
-            log.error("DB Error - SQL: {}", ddl, e);
-            throw new RuntimeException(e);
-        } finally {
-			close(pstmt, con);
-		}
-    }
 }

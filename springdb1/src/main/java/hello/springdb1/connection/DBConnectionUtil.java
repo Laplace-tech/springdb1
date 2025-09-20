@@ -46,7 +46,7 @@ import java.sql.SQLException;
  * 
  * - H2 데이터베이스의 경우, DriverManager.getConnection() 호출 시, 
  *   H2 드라이버가 jdbc:h2 URL을 처리하게 된다. 연결을 성공적으로 설정하면
- *   "org.h2.jdbc.JdbcConnection 객체를 반환"하는데, 이는 "H2가 구현한 Connection 객체"이다.
+ *   "org.h2.jdbc.JdbcConnection" 객체를 반환하는데, 이는 "H2가 구현한 Connection 객체"이다.
  *   이 객체는 java.sql.Connection 인터페이스를 구현했으므로 JDBC 표준을 따른다.
  * -----------------------------------------------------------------------------------------
  * 4. H2 데이터베이스 커넥션 객체
@@ -66,13 +66,13 @@ public class DBConnectionUtil {
 
 		try {
 			// JDBC 드라이버를 이용해서 연결을 가져온다.
-			Connection connection = DriverManager.getConnection(
+			Connection con = DriverManager.getConnection(
 					ConnectionConst.URL, 
-					ConnectionConst.USERNAME,
+					ConnectionConst.USERNAME, 
 					ConnectionConst.PASSWORD);
 			
-			System.out.println("DB 연결 성공 : " + connection); // 연결 성공 시 출력
-			return connection;
+			System.out.println("DB 연결 성공 : " + con); // 연결 성공 시 출력
+			return con;
 		} catch (SQLException e) {
 			// 예외가 발생하면 에러 메세지를 출력하고 다시 예외를 던진다
 			System.err.println("DB 연결 오류: " + e.getMessage());

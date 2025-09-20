@@ -19,15 +19,15 @@ public class UncheckedTest {
 	void unchecked_throw() {
 		Service service = new Service();
 		assertThatThrownBy(() -> service.callThrow())
-			.isInstanceOf(MyUncheckedException.class);
+			.isInstanceOf(UncheckedException.class);
 	}
 	
 	/**
 	 * RuntimeException을 상속받은 예외는 언체크 예외가 된다.
 	 */
 	@SuppressWarnings("serial")
-	static class MyUncheckedException extends RuntimeException {
-		public MyUncheckedException(String message) {
+	static class UncheckedException extends RuntimeException {
+		public UncheckedException(String message) {
 			super(message);
 		}
 	}
@@ -42,8 +42,8 @@ public class UncheckedTest {
 		public void callCatch() {
 			try {
 				repository.call();
-			} catch (MyUncheckedException e) {
-				log.info("예외 처리, message={}", e.getMessage());
+			} catch (UncheckedException e) {
+				log.info("예외 처리, message={}", e.getMessage(), e);
 			}
 		}
 		
@@ -58,7 +58,7 @@ public class UncheckedTest {
 	
 	static class Repository {
 		public void call() {
-			throw new MyUncheckedException("Exception");
+			throw new UncheckedException("Exception");
 		}
 	}
 	

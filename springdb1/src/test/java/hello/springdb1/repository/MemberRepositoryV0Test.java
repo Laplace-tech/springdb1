@@ -28,6 +28,7 @@ public class MemberRepositoryV0Test {
 
 	@AfterEach
 	void AfterEach() throws SQLException {
+		repository.deleteAll();
 		repository.dropTable();
 	}
 

@@ -19,54 +19,46 @@ public class CheckedTest {
 	void checked_throw() {
 		Service service = new Service();
 		assertThatThrownBy(() -> service.callThrow())
-			.isInstanceOf(MyCheckedException.class);
+			.isInstanceOf(CheckedException.class);
 	}
 	
 	/**
-	 * Exception 상속 예외는 체크 예외가 된다.
+	 * Exception 을 상속받은 예외는 체크 예외가 된다.
 	 */
 	@SuppressWarnings("serial")
-	static class MyCheckedException extends Exception {
-		public MyCheckedException(String message) {
+	static class CheckedException extends Exception {
+		public CheckedException(String message) {
 			super(message);
 		}
 	}
 	
-	/**
-	 * 
-	 */
 	static class Service {
 		Repository repository = new Repository();
 		
-		/*
+		/**
 		 * 예외를 잡아서 처리하는 코드
 		 */
 		public void callCatch() {
 			try {
 				repository.call();
-			} catch (MyCheckedException e) {
+			} catch (CheckedException e) {
 				log.info("예외 처리, message = {}", e.getMessage(), e);
 			}
 		}
 		
-		/*
+		/**
 		 * 체크 예외를 밖으로 던지는 코드
-		 * 체크 예외는 예외를 잡지 않고 밖으로 던지려면 throws 예외를 메서드에 필수로 선언해야 한다.
+		 * 체크 예외는 예외를 잡지 않고 밖으로 던지려면 throws 를 메서드에 필수로 선언해야 한다.
+		 * @throws CheckedException
 		 */
-		public void callThrow() throws MyCheckedException {
+		public void callThrow() throws CheckedException {
 			repository.call();
 		}
 	}
 	
-	/** 
-	 * 체크 예외를 밖으로 던지는 코드
-	 * 체크 예외는 예외를 잡지 않고 밖으로 던지려면 throws 예외를 메서드에 필수로 선언해야 한다
-	 */
 	static class Repository {
-		public void call() throws MyCheckedException {
-			throw new MyCheckedException("Exception");
+		public void call() throws CheckedException{
+			throw new CheckedException("ex");
 		}
 	}
-	
-	
 }
