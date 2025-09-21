@@ -45,6 +45,22 @@ import lombok.extern.slf4j.Slf4j;
  * - 트랜잭션 동기화 매니저 덕분에 "커넥션을 파라미터로 직접 전달"할 필요가 사라짐
  * - 다른 트랜잭션 매니저(JPA, Hibernate 등)도 동일한 원리로 동작하되, 각 기술에 맞게 구현만 다름
  */
+
+/**
+ * - 서비스 계층에서 @Transactional 을 선언하거나
+ *   PlatformTransactionManager 로 트랜잭션을 시작하면,
+ *   → 트랜잭션 동기화 매니저가 하나의 Connection 을 보관
+ *   → Repository 에서 DataSourceUtils.getConnection(dataSource)을 호출하면
+ *     그 보관된 Connection 을 계속 반환
+ *
+ *   결과:
+ *   - 한 트랜잭션 내의 여러 Repository 메서드 호출이 모두 "같은 Connection"을 공유
+ *   - 트랜잭션 커밋/롤백 시점까지 커넥션이 유지됨
+ *   
+ * - 서비스 계층이 JDBC 기술(Connection)에 의존하지 않음
+ * - 스프링이 Connection 생명주기를 관리 → 안정적 트랜잭션 처리
+ * - try-with-resources 대신 명시적 close() + DataSourceUtils로 제어 → 트랜잭션 안전
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class MemberServiceV3_1 {

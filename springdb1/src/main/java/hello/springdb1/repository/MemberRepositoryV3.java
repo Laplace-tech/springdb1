@@ -87,10 +87,6 @@ import lombok.extern.slf4j.Slf4j;
  *  - 코드에서 직접 트랜잭션을 제어하고 싶다면 TransactionTemplate 사용.
  *  - 그러나 대부분 @Transactional(선언적)이 권장됨
  * 
- */
-
-
-/**
  * ================================
  * ✅ 리소스 동기화 & 스프링의 해결 방식
  * ================================
@@ -132,6 +128,14 @@ import lombok.extern.slf4j.Slf4j;
  *   리포지토리는 순수하게 SQL 실행 로직에만 집중할 수 있다.
  */
 
+
+/**
+ * [V2 → V3 진화 포인트]
+ * - V2: Connection 객체를 서비스 계층에서 직접 제어해야 함(트랜잭션 시작) → 서비스가 JDBC 기술에 의존
+ * - V3: Spring 트랜잭션 추상화를 도입 (DataSourceUtils, TransactionSynchronizationManager)
+ *       → 서비스 계층은 Connection 객체에 의존하지 않음
+ *       → 비즈니스 로직 + 트랜잭션 관리 코드만 다루게 됨
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class MemberRepositoryV3 {
@@ -308,8 +312,13 @@ public class MemberRepositoryV3 {
 	
     private Connection getConnection() {
     	/**
-    	 * 트랜잭션 동기화 매니저가 관리하는 커넥션이 있으면 해당 커넥션을 반환
-    	 * 트랜잭션 동기화 매니저가 관리하는 커넥션이 없는 경우 새로운 커넥션을 생성해서 반환
+    	 * DataSourceUtils.getConnection(dataSource) 사용
+    	 * → 트랜잭션 동기화 매니저가 관리하는 Connection 객체가 있으면 그대로 반환 
+    	 * → 없으면 새로운 커넥션 생성
+    	 * 
+    	 * 즉, 
+    	 * - 트랜잭션 시작된 경우 → 같은 커넥션을 계속 사용 (커밋/롤백 까지 유지)
+    	 * - 트랜잭션 없는 경우 → 매번 새 커넥션 생성 후, 작업 종료 시 닫음.
     	 */
     	return DataSourceUtils.getConnection(dataSource);
     }
@@ -326,8 +335,16 @@ public class MemberRepositoryV3 {
 		 * 이 커넥션은 이후 로직은 물론이고, 트랜잭션을 종료(커밋, 롤백)할 때 까지 살아있어야 함.
 		 * 
 		 * DataSourceUtils.releaseConnection()을 사용하면 커넥션을 바로 닫지 않음.
-		 * 트랜잭션을 사용하기 위해 동기화된 커넥션은 커넥션을 닫지 않고 그대로 유지
+		 * "트랜잭션을 사용하기 위해 동기화된 커넥션은 커넥션을 닫지 않고 그대로 유지"
 		 * 트랜잭션 동기화 매니저가 관리하는 커넥션이 없는 경우 해당 커넥션을 닫음.
+		 * 
+		 * DataSourceUtils.releaseConnection(con, dataSource)
+		 * → 단순히 con.close()를 호출하지 않음
+		 * → 트랜잭션이 걸려있는 Connection 은 유지
+		 * → 트랜잭션이 없는 경우만 실제로 닫음
+		 * 
+		 * 덕분에, Repository 계층에서 close()를 호출해도
+		 * 트랜잭션 안정성이 깨지지 않음.
 		 */
 		DataSourceUtils.releaseConnection(con, dataSource);
 	}

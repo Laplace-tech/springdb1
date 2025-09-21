@@ -47,6 +47,20 @@ import lombok.extern.slf4j.Slf4j;
  * 
  */
 
+/**
+ * [V4_1 -> V4_2 개선 포인트]
+ * 
+ * [스프링 예외 변환 - SQLExceptionTranslator]
+ * 
+ * - SQLExceptionTranslator 도입
+ *  -> DataAccessException 기반 스프링 예외로 변환
+ *  -> DB 종류에 따라 적절한 예외를 추상화해서 던짐
+ *  -> 예: DuplicateKeyException, DataIntegrityViolationException 등
+ * 
+ * - 코드 구조는 거의 동일하지만
+ *  -> catch(SQLException e) { throw exTranslator.translate(...) } 패턴 사용
+ * 
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class MemberRepositoryV4_2 implements MemberRepository {

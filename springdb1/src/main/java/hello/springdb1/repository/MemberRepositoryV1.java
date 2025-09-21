@@ -100,6 +100,15 @@ import lombok.extern.slf4j.Slf4j;
  * 	 "모니터링 기반 튜닝", "스프링이면 @Transactional에 위임"
  */
 
+/**
+ * [개선 포인트 V0 → V1]
+ * 
+ * DataSource 외부 주입
+ *  - DB 연결을 얻는 책임을 외부로 위임
+ *  - HikariCP(운영) / DriverManagerDataSource(테스트) 등 유연하게 교체 가능
+ *  - Spring 환경에서 DI 컨테이너가 관리하는 DataSource를 주입받으면 트랜잭션 매니저와도 쉽게 연동 가능
+ */
+
 @Slf4j
 @RequiredArgsConstructor
 public class MemberRepositoryV1 {
@@ -110,9 +119,7 @@ public class MemberRepositoryV1 {
 	 */
 	private final DataSource dataSource;
 	
-	/**
-	 * 테이블 생성
-	 */
+    // ========== 테이블 관리 ==========   
 	public void initTable() {
 		String ddl = "create table if not exists member (" 
 					+ "member_id varchar(10) primary key, "
@@ -129,9 +136,6 @@ public class MemberRepositoryV1 {
 		}
 	}
 	
-	/**
-	 * 테이블 삭제
-	 */
 	public void dropTable() {
 		String ddl = "drop table if exists member";
 
@@ -146,6 +150,7 @@ public class MemberRepositoryV1 {
 		}
 	}
 	
+	// ========== CRUD ==========
 	public Member save(Member member) {
 		String sql = "insert into member(member_id, money) values (?, ?)";
 

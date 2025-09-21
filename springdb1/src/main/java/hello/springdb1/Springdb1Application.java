@@ -13,6 +13,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -58,6 +59,8 @@ public class Springdb1Application {
 		SpringApplication.run(Springdb1Application.class, args);
 	}
 
+	// -------------------------------------------------------------------
+	
 	public static HikariDataSource createHikariDataSource() {
 		HikariConfig config = new HikariConfig();
 		config.setJdbcUrl(URL);
@@ -72,11 +75,15 @@ public class Springdb1Application {
 	public static DriverManagerDataSource createDriverManagerDataSource() {
 		return new DriverManagerDataSource(URL, USERNAME, PASSWORD);
 	}
+	
+	// --------------------------------------------------------------------
 
-	public static DataSourceTransactionManager createDataSourceTransactionManager(DataSource dataSource) {
+	public static PlatformTransactionManager createDataSourceTransactionManager(DataSource dataSource) {
 		return new DataSourceTransactionManager(dataSource);
 	}
 
+	// --------------------------------------------------------------------
+	
 	public static void useDataSource(DataSource dataSource) throws SQLException {
 		try (Connection con = dataSource.getConnection()) {
 			log.info("connection={}, class={}", con, con.getClass());

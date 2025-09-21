@@ -23,7 +23,6 @@ import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import hello.springdb1.domain.Member;
 import hello.springdb1.repository.MemberRepository;
 import hello.springdb1.repository.MemberRepositoryV4_2;
-import hello.springdb1.repository.MemberRepositoryV5;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,23 +58,29 @@ public class MemberServiceV4Test {
 
         private final DataSource dataSource; // 자동 생성된 DataSource 주입
         
-//        @Bean
-//        SQLErrorCodeSQLExceptionTranslator sqlErrorCodeSQLExceptionTranslator() {
-//        	return new SQLErrorCodeSQLExceptionTranslator(dataSource);
-//        }
+        @Bean
+        MemberRepository memberRepository() {
+//          return new MemberRepositoryV4_1(dataSource); // 단순 예외 변환
+        	return new MemberRepositoryV4_2(dataSource, sqlErrorCodeSQLExceptionTranslator());
+//        	return new MemberRepositoryV5(jdbcTemplate());
+        }
+        
+        /**
+         * This is for MemberRepositoryV4_2
+         */
+        @Bean
+        SQLErrorCodeSQLExceptionTranslator sqlErrorCodeSQLExceptionTranslator() {
+        	return new SQLErrorCodeSQLExceptionTranslator(dataSource);
+        }
      
+        /**
+         * This is for MemberRepositoryV5
+         */
         @Bean
         JdbcTemplate jdbcTemplate() {
         	return new JdbcTemplate(dataSource);
         }
         
-        @Bean
-        MemberRepository memberRepository() {
-//          return new MemberRepositoryV4_1(dataSource); // 단순 예외 변환
-//        	return new MemberRepositoryV4_2(dataSource, sqlErrorCodeSQLExceptionTranslator());
-        	return new MemberRepositoryV5(jdbcTemplate());
-        }
-
         @Bean
         MemberServiceV4 MemberService4() {
         	return new MemberServiceV4(memberRepository());

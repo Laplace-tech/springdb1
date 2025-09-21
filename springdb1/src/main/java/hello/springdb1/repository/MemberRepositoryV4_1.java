@@ -94,6 +94,25 @@ import lombok.extern.slf4j.Slf4j;
  *       }
  */
 
+
+/**
+ * [개선 포인트 V3 → V4_1]
+ * 
+ * 1. 예외 처리 전략 변화
+ * - V3에서는 SQLException 발생 시 RuntimeException으로 단순 변환
+ * - V4_1에서는 SQLException → MyDbException (사용자 정의 예외)로 변환
+ * - 서비스 계층은 JDBC 기술에 의존하지 않고, 오직 MyDbException 계층만 알면 됨
+ * 
+ * 2. 사용자 정의 예외 계층
+ * - MyDbException : DB 관련 최상위 런타임 예외
+ *    └─ MyDuplicateKeyException : 키 중복 전용 예외 (복구 가능)
+ *      
+ * 3. 장점
+ * - 서비스 계층의 "순수성" 유지!! (JDBC, SQLException, Connection 몰라도 됨)
+ * - 특정 오류코드(예: 23505 - 키 중복)를 잡아 복구 로직 처리 가능
+ * - 기술 교체(JDBC -> JPA 등) 시에도 서비스 계층 코드 변경 최소화
+ * 
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class MemberRepositoryV4_1 implements MemberRepository {

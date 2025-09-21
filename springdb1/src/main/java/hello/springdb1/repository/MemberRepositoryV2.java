@@ -53,9 +53,6 @@ import lombok.extern.slf4j.Slf4j;
  *   * 애플리케이션은 논리 커넥션의 close()만 호출하면 된다. (풀에 반납)
  *   * 절대 논리 커넥션 내부의 물리 연결을 직접 close/종료하면 안됨.
  * 
- */
-
-/**
  * =========================
  * 데이터베이스 연결 구조 & 세션 이해
  * =========================
@@ -84,9 +81,6 @@ import lombok.extern.slf4j.Slf4j;
  *  - 애플리케이션은 필요할 때 커넥션을 빌려 쓰고 반환
  *  - 반환 시 세션은 종료되지 않고 재사용 가능 (논리 커넥션/프록시 개념)
  * 
- */
-
-/**
  * ========================
  * 트랜잭션 (Transaction) 이해
  * ========================
@@ -148,6 +142,38 @@ import lombok.extern.slf4j.Slf4j;
  * - commit → 변경사항 확정, rollback → 변경사항 취소.
  * - 즉, `set autocommit false` = "트랜잭션 시작"이라고 표현할 수 있음.
  */
+
+
+/**
+ * [V1 → V2 차이점]
+ * - V1: 모든 메서드 내부에서 Connection 생성/닫음 -> 항상 독립 트랜잭션 실행
+ * - V2: 일부 메서드(findById, update)는 Connection 을 외부에서 주입받을 수 있음.
+ *  → 서비스 계층에서 "하나의 Connection"을 여러 메서드에 전달 가능
+ *  → 즉, "트랜잭션 범위를 서비스 계층이 제어"할 수 있는 구조
+ *  
+ * [핵심 개념 - 트랜잭션 도입]
+ * - 트랜잭션은 "하나의 Connection" 단위로 동작
+ * - 서비스에서 커넥션을 직접 생서앟고, Repository 메서드에 넘겨주면
+ *   → 모든 SQL이 같은 Connection 을 사용
+ *   → 커밋, 롤백도 서비스 계층에서 제어 가능
+ *   
+ *    예)
+ *      try (Connection con = dataSource.getConnection()) {
+ *          con.setAutoCommit(false);
+ *          repo.update(con, ...);
+ *          repo.findById(con, ...);
+ *          con.commit();
+ *      } catch (Exception e) {
+ *          con.rollback();
+ *      }  
+ *      
+ * [단점 및 개선 포인트]
+ * - 서비스 계층이 Connection 객체를 집접 다루어야 함 → 순수성이 깨짐
+ * - Spring TransactionManager를 사용하면 이런 의존성이 사라짐
+ *   (DataSourceUtils.getConnection(dataSource) 사용 → 트랜잭션 동기화 자동 관리)
+ *      
+ */
+
 @Slf4j
 @RequiredArgsConstructor
 public class MemberRepositoryV2 {

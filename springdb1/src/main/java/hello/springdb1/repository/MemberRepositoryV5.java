@@ -39,6 +39,21 @@ import lombok.extern.slf4j.Slf4j;
  * - 리포지토리 단에서는 SQL과 파라미터 지정만으로 CRUD 수행 가능
  */
 
+
+/**
+ * [V4_2 -> V5 개선 포인트]
+ * 
+ * - JdbcTemplate 도입
+ * -> JDBC boilerplate 코드 (Connection, PreparedStatement, ResultSet, close) "제거"
+ * -> SQLException을 스프링 DataAccessException으로 "자동 변환"
+ * -> 예외 처리가 깔끔하고 일관됨
+ * 
+ * - RowMapper 사용
+ * -> ResultSet → Member 객체 변환 로직 분리
+ * -> queryForObject, query 등 편리한 메서드 활용 가능
+ *   
+ *   
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class MemberRepositoryV5 implements MemberRepository {
